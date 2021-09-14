@@ -1,0 +1,56 @@
+version: '3'
+
+services:
+
+  db:
+    container_name: 'ex-server-db'
+    build: ./docker/db
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: docker
+      MYSQL_USER: docker
+      MYSQL_PASSWORD: docker
+    volumes:
+      - ./docker/db/data:/var/lib/mysql
+      - ./docker/db/sql:/docker-entrypoint-initdb.d
+    ports:
+      - 3306:3306
+
+  phpmyadmin:
+    container_name: 'ex-server-phpmyadmin'
+    image: phpmyadmin/phpmyadmin
+    environment:
+      - PMA_ARBITRARY=1
+      - PMA_HOSTS=ex-server-db
+      - PMA_USER=root
+      - PMA_PASSWORD=root
+    ports:
+      - 8080:80
+
+  node:
+    container_name: 'ex-server-node'
+    build: './docker/node'
+    ports:
+      - 9000:9000
+    tty: true
+    volumes:
+      - ./server/:/srv:rw
+      - ./server/node_modules:/srv/node_modules:delegated
+    working_dir: /srv
+    environment:
+      HOST: 0.0.0.0
+#      TZ: 'Asia/Tokyo'
+    command: bash -c 'npm start'
+
+  react:
+    container_name: 'react-client'
+    build: ./client
+    volumes:
+      - './:/app'
+      - '/app/node_modules'
+    ports:
+      - 80:3000
+    stdin_open: true
+    environment:
+      HOST: 0.0.0.0
+    command: npm start
